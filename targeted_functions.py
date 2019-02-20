@@ -963,6 +963,7 @@ def get_parameter_groups(pta, rnpsrs=None):
     ephempars = []
     rnpars = []
     cwpars = []
+    wnpars = []
 
     for sc in pta._signalcollections:
         for signal in sc._signals:
@@ -972,6 +973,11 @@ def get_parameter_groups(pta, rnpsrs=None):
                 ephempars.extend(signal.param_names)
             elif signal.signal_name == 'cgw':
                 cwpars.extend(signal.param_names)
+            elif signal.signal_name == 'efac':
+                wnpars.extend(signal.param_names)
+            elif signal.signal_name == 'equad':
+                wnpars.extend(signal.param_names)
+                
     
     if 'red noise' in snames:
     
@@ -980,6 +986,29 @@ def get_parameter_groups(pta, rnpsrs=None):
 
         for psr in rnpsrs:
             groups.extend([[params.index(psr + '_gamma'), params.index(psr + '_log10_A')]])
+            
+        groups.extend([[params.index(p) for p in rnpars]])
+    #addition for sampling wn
+    #this groups efac and equad together for each pulsar
+    if 'efac' and 'equad' in snames:
+    
+        # create parameter groups for the red noise parameters
+        wnpsrs = [ p.split('_')[0] for p in params if '_efac' in p]
+
+        for psr in wnpsrs:
+            groups.extend([[params.index(psr + '_efac'), params.index(psr + '_log10_equad')]])
+            
+        groups.extend([[params.index(p) for p in wnpars]])
+        
+    if 'efac' and 'equad' and 'red noise' in snames:
+    
+        # create parameter groups for the red noise parameters
+        psrs = [ p.split('_')[0] for p in params if '_efac' in p and '_log10_A' in p and 'gwb' not in p]
+
+        for psr in psrs:
+            groups.extend([[params.index(psr + '_efac'), params.index(psr + '_log10_equad'),
+                            params.index(psr + '_gamma'), params.index(psr + '_log10_A')]])
+            
                     
     # set up groups for the BayesEphem parameters
     if 'phys_ephem' in snames:
@@ -1048,7 +1077,16 @@ def get_parameter_groups(pta, rnpsrs=None):
                   ['log10_mc', 'log10_fgw'],
                   ['cos_gwtheta', 'gwphi','log10_fgw'],
                   ['log10_fgw', 'cos_inc', 'phase0', 'psi'],
-                  ['log10_fgw', 'phase0']]
+                  ['log10_fgw', 'phase0'],
+                  
+                  ['log10_mc', 'cos_inc', 'phase0', 'psi', 'log10_fgw','gwb_log10_A' ], 
+                  ['log10_mc', 'phase0', 'log10_fgw','gwb_log10_A' ], 
+                  ['cos_inc', 'phase0', 'log10_fgw','gwb_log10_A' ], 
+                  ['phase0', 'psi','log10_fgw','gwb_log10_A' ],
+                  ['log10_mc', 'log10_fgw','gwb_log10_A' ],
+                  ['cos_gwtheta', 'gwphi','log10_fgw','gwb_log10_A' ],
+                  ['log10_fgw', 'cos_inc', 'phase0', 'psi','gwb_log10_A' ],
+                  ['log10_fgw', 'phase0','gwb_log10_A' ]]
                 
         
         for combo in combos:
